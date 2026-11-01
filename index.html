@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trivia Battle</title>
+<style>
+:root{--bg:#11132c;--panel:#202449;--line:#454c83;--gold:#ffd34e;--pink:#ff579a;--cyan:#57d3ff;--white:#fff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at top,#34336b 0%,#11132c 60%);font-family:system-ui,Arial,sans-serif;color:var(--white)}
+main{max-width:760px;margin:auto;padding:18px}.logo{text-align:center;font-weight:1000;font-size:clamp(34px,8vw,58px);letter-spacing:-2px;color:var(--gold);text-shadow:3px 4px #a33283;margin:8px 0}.tag{text-align:center;color:#d0d4f7;margin-bottom:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:20px;margin:14px 0;box-shadow:0 12px 30px #0003}h2{margin:0 0 14px}label{display:block;margin-top:8px;color:#d0d4f7}input,select{width:100%;padding:13px;border-radius:12px;border:0;margin:6px 0 12px;font:inherit;color:#171932;background:#fff}
+button{font:inherit;font-weight:800;padding:13px 16px;border:0;border-radius:13px;background:var(--gold);color:#171932;cursor:pointer;margin:4px 4px 4px 0}button.alt{background:#454c83;color:white}button:disabled{opacity:.5;cursor:default}.flex{display:flex;gap:8px;flex-wrap:wrap}.flex>*{flex:1}.hidden{display:none}.muted{color:#c9cef4}.badge{display:inline-block;background:#34395f;border-radius:99px;padding:7px 12px;font-size:13px}.question{font-size:clamp(22px,5vw,30px);font-weight:850;line-height:1.25;margin:20px 0}.answer{display:block;width:100%;text-align:left;background:#30365f;border:2px solid #50578e;color:white;margin:9px 0}.answer.selected{border-color:var(--gold);background:#4b4262}.bar{height:8px;background:#43496e;border-radius:9px;overflow:hidden;margin:14px 0}.bar span{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--gold));width:0}.score{font-size:23px;color:var(--gold);font-weight:900}.row{display:flex;justify-content:space-between;gap:8px;align-items:center}.status{background:#2c3159;padding:12px;border-radius:12px;margin:12px 0}.tiny{font-size:12px;color:#c4c9ec}.list{padding-left:22px}.list li{padding:7px 0}.confetti{font-size:36px;text-align:center;letter-spacing:6px}
+</style>
+</head>
+<body><main>
+<div class="logo">⚡ TRIVIA BATTLE ⚡</div><div class="tag">Think fast. Score big. Become the champion.</div>
+<section id="setup" class="card">
+<h2>Set up your battle</h2>
+<label>Players</label><select id="players"><option value="1">Solo practice</option><option value="2">2 players · pass & play</option><option value="3">3 players · pass & play</option><option value="4">4 players · pass & play</option><option value="5">5 players · pass & play</option><option value="6">6 players · pass & play</option><option value="7">7 players · pass & play</option><option value="8">8 players · pass & play</option></select>
+<label>Names (comma-separated)</label><input id="names" placeholder="Alex, Sam, Taylor">
+<label>Question category</label><select id="category"><option>All Categories</option><option>Science</option><option>Geography</option><option>History</option><option>Movies & Music</option><option>General Knowledge</option></select>
+<label>Difficulty</label><select id="difficulty"><option>Mixed</option><option>Easy</option><option>Medium</option><option>Hard</option></select>
+<button id="begin">Start Battle</button><button class="alt" id="how">How to play</button><div id="help" class="status hidden">Answer each question on your turn. Correct answer = 10 points. For pass-and-play, hand the device to the next player after each turn. This is a local game on one device, not online multiplayer.</div>
+</section>
+<section id="play" class="card hidden">
+<div class="row"><span class="badge" id="counter">QUESTION 1/10</span><span class="badge" id="whose">Player</span><span class="score" id="score">0</span></div>
+<div class="bar"><span id="progress"></span></div><div class="question" id="qtext"></div><div id="choices"></div>
+<button id="submit">Lock answer</button><div id="reveal" class="status hidden"></div><button id="next" class="alt hidden">Next question</button>
+</section>
+<section id="finish" class="card hidden"><div class="confetti">🎉 🏆 🎉</div><h2 style="text-align:center">Battle complete!</h2><div id="board"></div><button id="again">Play again</button><button class="alt" id="home">Home</button></section>
+<div class="tiny" style="text-align:center;margin:22px">Trivia Battle · Free playable prototype</div>
+</main>
+<script>
+const bank=[
+{cat:"Science",d:"Easy",q:"Which planet is called the Red Planet?",a:["Venus","Mars","Jupiter","Mercury"],c:1,f:"Mars looks reddish because iron minerals in its soil have oxidized."},
+{cat:"Geography",d:"Easy",q:"What is the largest ocean on Earth?",a:["Atlantic","Indian","Arctic","Pacific"],c:3,f:"The Pacific is larger than all Earth's land area combined."},
+{cat:"General Knowledge",d:"Easy",q:"How many sides does a hexagon have?",a:["5","6","7","8"],c:1,f:"The prefix hex means six."},
+{cat:"Science",d:"Easy",q:"Which animal is the tallest in the world?",a:["Elephant","Giraffe","Ostrich","Camel"],c:1,f:"Giraffes can reach leaves high in trees."},
+{cat:"Science",d:"Medium",q:"What gas do plants absorb during photosynthesis?",a:["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],c:2,f:"Plants use carbon dioxide and water to make sugars."},
+{cat:"History",d:"Medium",q:"Who painted the Mona Lisa?",a:["Van Gogh","Leonardo da Vinci","Picasso","Monet"],c:1,f:"Leonardo began the famous portrait around 1503."},
+{cat:"Geography",d:"Easy",q:"What is the capital of Japan?",a:["Seoul","Beijing","Tokyo","Bangkok"],c:2,f:"Tokyo is one of the world's largest metropolitan areas."},
+{cat:"Movies & Music",d:"Medium",q:"Which instrument has keys, pedals, and strings?",a:["Flute","Piano","Drum","Trumpet"],c:1,f:"Inside a piano, hammers strike strings when keys are pressed."},
+{cat:"General Knowledge",d:"Easy",q:"How many minutes are in two hours?",a:["100","110","120","140"],c:2,f:"An hour has 60 minutes."},
+{cat:"Science",d:"Medium",q:"Which is the largest mammal?",a:["African elephant","Blue whale","Giraffe","Orca"],c:1,f:"The blue whale is the largest animal known to have ever lived."},
+{cat:"History",d:"Medium",q:"The ancient Olympic Games began in which country?",a:["Italy","Greece","Egypt","China"],c:1,f:"The ancient games were held at Olympia in Greece."},
+{cat:"Geography",d:"Medium",q:"Which continent has the most countries?",a:["Asia","Europe","Africa","South America"],c:2,f:"Africa has 54 widely recognized sovereign countries."},
+{cat:"Science",d:"Hard",q:"What is the chemical symbol for gold?",a:["Go","Gd","Au","Ag"],c:2,f:"Au comes from the Latin word aurum."},
+{cat:"General Knowledge",d:"Hard",q:"How many bones are typically in an adult human body?",a:["196","206","216","226"],c:1,f:"Babies have more bones, many of which fuse as they grow."},
+{cat:"History",d:"Hard",q:"In which year did the Berlin Wall fall?",a:["1987","1988","1989","1991"],c:2,f:"The wall opened on November 9, 1989."},
+{cat:"Movies & Music",d:"Easy",q:"Which family of instruments does a violin belong to?",a:["Brass","Percussion","String","Woodwind"],c:2,f:"A violin produces sound from vibrating strings."},
+{cat:"Science",d:"Hard",q:"What is the approximate speed of light in a vacuum?",a:["300,000 km/s","30,000 km/s","3,000 km/s","3 million km/s"],c:0,f:"Light travels about 299,792 kilometers each second."},
+{cat:"Geography",d:"Hard",q:"Which country has the most natural lakes?",a:["Canada","Finland","Russia","United States"],c:0,f:"Canada contains a huge share of the world's natural lakes."},
+{cat:"General Knowledge",d:"Medium",q:"Which shape has exactly three sides?",a:["Square","Triangle","Pentagon","Circle"],c:1,f:"A triangle's three interior angles add up to 180 degrees."},
+{cat:"Movies & Music",d:"Medium",q:"How many strings does a standard guitar usually have?",a:["4","5","6","7"],c:2,f:"Most standard guitars have six strings."}
+];
+let roster=[],scores=[],questions=[],idx=0,pick=null,answered=false;
+const $=id=>document.getElementById(id);
+$("how").onclick=()=>$("help").classList.toggle("hidden");
+$("begin").onclick=()=>{
+let count=+$("players").value,typed=$("names").value.split(",").map(x=>x.trim()).filter(Boolean);
+roster=Array.from({length:count},(_,i)=>typed[i]||`Player ${i+1}`);scores=roster.map(()=>0);
+let cat=$("category").value,dif=$("difficulty").value;
+let pool=bank.filter(x=>(cat==="All Categories"||x.cat===cat)&&(dif==="Mixed"||x.d===dif));
+if(pool.length<10)pool=bank.filter(x=>cat==="All Categories"||x.cat===cat);
+if(pool.length<10)pool=bank;
+questions=pool.slice().sort(()=>Math.random()-.5).slice(0,10);
+idx=0;pick=null;answered=false;$("setup").classList.add("hidden");$("finish").classList.add("hidden");$("play").classList.remove("hidden");draw();
+};
+function draw(){
+$("counter").textContent=`QUESTION ${idx+1}/10`;$("whose").textContent=roster[idx%roster.length];$("score").textContent=scores[idx%roster.length]+" pts";$("progress").style.width=((idx+1)*10)+"%";
+let q=questions[idx];$("qtext").textContent=q.q;$("choices").innerHTML=q.a.map((a,i)=>`<button class="answer ${pick===i?"selected":""}" data-i="${i}">${"ABCD"[i]}. ${a}</button>`).join("");
+document.querySelectorAll(".answer").forEach(b=>b.onclick=()=>{if(!answered){pick=+b.dataset.i;drawChoices()}});
+$("submit").disabled=false;$("reveal").classList.add("hidden");$("next").classList.add("hidden");
+}
+function drawChoices(){document.querySelectorAll(".answer").forEach(b=>b.classList.toggle("selected",+b.dataset.i===pick))}
+$("submit").onclick=()=>{if(pick===null)return;answered=true;let q=questions[idx],p=idx%roster.length;if(pick===q.c)scores[p]+=10;$("score").textContent=scores[p]+" pts";$("choices").querySelectorAll("button").forEach(b=>{b.disabled=true;if(+b.dataset.i===q.c)b.style.borderColor="#65e6a7"});$("reveal").textContent=(pick===q.c?"Correct! +10 points. ":"Not quite. ")+`Answer: ${q.a[q.c]}. ${q.f}`;$("reveal").classList.remove("hidden");$("submit").disabled=true;$("next").textContent=idx===9?"Show results":"Next question";$("next").classList.remove("hidden")};
+$("next").onclick=()=>{idx++;pick=null;answered=false;if(idx>=10)results();else draw()};
+function results(){ $("play").classList.add("hidden");$("finish").classList.remove("hidden");let arr=roster.map((name,i)=>({name,score:scores[i]})).sort((a,b)=>b.score-a.score);$("board").innerHTML=arr.map((p,i)=>`<div class="status">${["🥇","🥈","🥉"][i]||"🎮"} <b>${p.name.replace(/[&<>"]/g,"")}</b><span style="float:right;color:#ffd34e;font-weight:900">${p.score} pts</span></div>`).join("")}
+$("again").onclick=()=>$("begin").click();$("home").onclick=()=>{$("finish").classList.add("hidden");$("setup").classList.remove("hidden")};
+</script></body></html>
